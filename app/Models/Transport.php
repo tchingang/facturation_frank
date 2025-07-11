@@ -1,6 +1,4 @@
 <?php
-// app/Models/Transport.php
-
 require_once __DIR__ . '/Database.php';
 
 class Transport {
@@ -138,7 +136,7 @@ class Transport {
                   FROM " . $this->table_name . " t
                   LEFT JOIN clients c ON t.client_id = c.id
                   WHERE t.is_billed = FALSE
-                  ORDER BY t.date DESC"; // Utilisez t.date si c'est le nom de votre colonne de date
+                  ORDER BY t.date DESC";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

@@ -5,7 +5,7 @@ require_once __DIR__ . '/Database.php';
 
 class InvoiceLine {
     private $conn;
-    private $table_name = "invoice_lines"; // Make sure this matches the table name above
+    private $table_name = "invoice_lines";
 
     public function __construct() {
         $database = Database::getInstance();
@@ -45,7 +45,7 @@ class InvoiceLine {
         return false;
     }
 
-    public function delete($id) { // Method to delete a single line if needed
+    public function delete($id) {
         $query = "DELETE FROM " . $this->table_name . " WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":id", $id);

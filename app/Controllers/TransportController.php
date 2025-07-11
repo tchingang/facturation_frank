@@ -4,7 +4,7 @@
 require_once __DIR__ . '/../Models/Transport.php';
 require_once __DIR__ . '/../Models/TransportLigne.php';
 require_once __DIR__ . '/../Models/TransportDeclaration.php';
-require_once __DIR__ . '/../Models/Client.php'; // Pour récupérer la liste des clients
+require_once __DIR__ . '/../Models/Client.php';
 
 class TransportController {
     private $transportModel;
@@ -16,7 +16,7 @@ class TransportController {
         $this->transportModel = new Transport();
         $this->transportLigneModel = new TransportLigne();
         $this->transportDeclarationModel = new TransportDeclaration();
-        $this->clientModel = new Client(); // Initialiser le modèle Client
+        $this->clientModel = new Client();
     }
 
     private function requireAuth() {
@@ -35,14 +35,13 @@ class TransportController {
     public function create() {
         $this->requireAuth();
         $error = null;
-        $clients = $this->clientModel->getAllClients(); // Récupérer tous les clients
+        $clients = $this->clientModel->getAllClients();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $attestation = $_POST['attestation'] ?? '';
             $status = $_POST['status'] ?? '';
             $date = $_POST['date'] ?? '';
             $client_id = $_POST['client_id'] ?? null;
-            // Retrieve the new total_transport_cost field
             $total_transport_cost = (float)($_POST['total_transport_cost'] ?? 0);
 
             $lines = $_POST['lines'] ?? [];
@@ -54,10 +53,8 @@ class TransportController {
                 $error = "Veuillez ajouter au moins une ligne de transport.";
             } else {
                 try {
-                    // Start transaction for atomicity
                     $this->transportModel->beginTransaction();
 
-                    // Pass the new total_transport_cost to the create method
                     $transport_id = $this->transportModel->create($attestation, $status, $date, $client_id, $total_transport_cost);
 
                     if ($transport_id) {
@@ -77,7 +74,7 @@ class TransportController {
                             $this->transportDeclarationModel->create($transport_id, $designation);
                         }
 
-                        $this->transportModel->commitTransaction(); // Commit if all successful
+                        $this->transportModel->commitTransaction();
                         $_SESSION['success_message'] = "Transport ajouté avec succès !";
                         header('Location: ' . BASE_URL . '/transports');
                         exit();
@@ -85,10 +82,10 @@ class TransportController {
                         throw new Exception("Erreur lors de la création du transport principal.");
                     }
                 } catch (Exception $e) {
-                    $this->transportModel->rollBack(); // Rollback on error
+                    $this->transportModel->rollBack();
                     $error = "Erreur: " . $e->getMessage();
                     error_log("Transport creation error: " . $e->getMessage());
-                    // error_log($e->getTraceAsString()); // Uncomment for detailed stack trace
+                    error_log($e->getTraceAsString());
                 }
             }
         }
@@ -100,7 +97,7 @@ class TransportController {
         $transport = $this->transportModel->getTransportById($id);
         $transport_lines = $this->transportLigneModel->getLinesByTransportId($id);
         $transport_declarations = $this->transportDeclarationModel->getDeclarationsByTransportId($id);
-        $clients = $this->clientModel->getAllClients(); // Récupérer tous les clients
+        $clients = $this->clientModel->getAllClients();
         $error = null;
 
         if (!$transport) {
@@ -114,8 +111,7 @@ class TransportController {
             $status = $_POST['status'] ?? $transport['status'];
             $date = $_POST['date'] ?? $transport['date'];
             $client_id = $_POST['client_id'] ?? $transport['client_id'];
-            // Retrieve the new total_transport_cost field
-            $total_transport_cost = (float)($_POST['total_transport_cost'] ?? 0); // Use existing value as fallback
+            $total_transport_cost = (float)($_POST['total_transport_cost'] ?? 0);
 
             $lines_data = $_POST['lines'] ?? [];
             $declarations_data = $_POST['declarations'] ?? [];
@@ -126,10 +122,8 @@ class TransportController {
                 $error = "Veuillez ajouter au moins une ligne de transport.";
             } else {
                 try {
-                    // Start transaction
                     $this->transportModel->beginTransaction();
 
-                    // Pass the new total_transport_cost to the update method
                     if ($this->transportModel->update($id, $attestation, $status, $date, $client_id, $total_transport_cost)) {
                         // Supprimer les anciennes lignes et déclarations
                         $this->transportLigneModel->deleteByTransportId($id);
@@ -153,7 +147,7 @@ class TransportController {
                             $this->transportDeclarationModel->create($id, $designation);
                         }
 
-                        $this->transportModel->commitTransaction(); // Commit if all successful
+                        $this->transportModel->commitTransaction();
                         $_SESSION['success_message'] = "Transport mis à jour avec succès !";
                         header('Location: ' . BASE_URL . '/transports');
                         exit();
@@ -161,10 +155,10 @@ class TransportController {
                         throw new Exception("Erreur lors de la mise à jour du transport principal.");
                     }
                 } catch (Exception $e) {
-                    $this->transportModel->rollBack(); // Rollback on error
+                    $this->transportModel->rollBack();
                     $error = "Erreur: " . $e->getMessage();
                     error_log("Transport update error: " . $e->getMessage());
-                    // error_log($e->getTraceAsString()); // Uncomment for detailed stack trace
+                    error_log($e->getTraceAsString());
                 }
             }
         }
@@ -173,7 +167,6 @@ class TransportController {
 
     public function delete($id) {
         $this->requireAuth();
-        // The delete method in the Transport model already handles transactions internally
         if ($this->transportModel->delete($id)) {
             $_SESSION['success_message'] = "Transport supprimé avec succès !";
         } else {

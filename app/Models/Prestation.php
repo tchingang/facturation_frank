@@ -14,7 +14,6 @@ class Prestation {
 
     // Récupère toutes les prestations avec des infos agrégées si nécessaire
     public function getAllPrestations() {
-        // Ensure billed_status is selected
         $query = "SELECT p.*, p.billed_status FROM " . $this->table_name . " p ORDER BY p.date DESC";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
@@ -23,7 +22,6 @@ class Prestation {
 
     // Récupère une prestation par ID
     public function getPrestationById($id) {
-        // Ensure billed_status is selected
         $query = "SELECT *, billed_status FROM " . $this->table_name . " WHERE id = :id LIMIT 0,1";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":id", $id);
@@ -36,7 +34,6 @@ class Prestation {
      * @return array Tableau associatif de prestations.
      */
     public function getUnbilledPrestations() {
-        // Assuming 'Unbilled' is the status for items not yet on an invoice
         $query = "SELECT p.* FROM " . $this->table_name . " p WHERE p.billed_status = 'Unbilled' ORDER BY p.date DESC";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
@@ -47,14 +44,14 @@ class Prestation {
      * Crée une nouvelle prestation principale.
      * Le statut facturé est initialisé à 'Unbilled' par défaut.
      */
-    public function create($attestation, $status, $date, $client_id) { // Added client_id as it was in InvoiceController
+    public function create($attestation, $status, $date, $client_id) {
         $query = "INSERT INTO " . $this->table_name . " (attestation, status, date, client_id, billed_status) VALUES (:attestation, :status, :date, :client_id, 'Unbilled')";
         $stmt = $this->conn->prepare($query);
 
         $stmt->bindParam(":attestation", $attestation);
         $stmt->bindParam(":status", $status);
         $stmt->bindParam(":date", $date);
-        $stmt->bindParam(":client_id", $client_id); // Bind new client_id parameter
+        $stmt->bindParam(":client_id", $client_id);
 
         if($stmt->execute()){
             return $this->conn->lastInsertId();
@@ -66,14 +63,14 @@ class Prestation {
      * Met à jour une prestation principale.
      * Le statut facturé n'est pas modifié ici, mais via updateBilledStatus.
      */
-    public function update($id, $attestation, $status, $date, $client_id) { // Added client_id
+    public function update($id, $attestation, $status, $date, $client_id) {
         $query = "UPDATE " . $this->table_name . " SET attestation = :attestation, status = :status, date = :date, client_id = :client_id WHERE id = :id";
         $stmt = $this->conn->prepare($query);
 
         $stmt->bindParam(":attestation", $attestation);
         $stmt->bindParam(":status", $status);
         $stmt->bindParam(":date", $date);
-        $stmt->bindParam(":client_id", $client_id); // Bind new client_id parameter
+        $stmt->bindParam(":client_id", $client_id);
         $stmt->bindParam(":id", $id);
 
         if($stmt->execute()){
@@ -133,13 +130,11 @@ class Prestation {
      * @return array Tableau des prestations non facturées.
      */
     public function getAllUnbilledPrestations() {
-        // Ajout de la jointure avec la table clients pour obtenir le nom du client
-        // et le tri par date pour un affichage plus cohérent
         $query = "SELECT p.*, c.name AS client_name 
                   FROM " . $this->table_name . " p
                   LEFT JOIN clients c ON p.client_id = c.id
                   WHERE p.is_billed = FALSE
-                  ORDER BY p.date DESC"; // Utilisez p.date si c'est le nom de votre colonne de date
+                  ORDER BY p.date DESC";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

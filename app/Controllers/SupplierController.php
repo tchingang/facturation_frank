@@ -31,7 +31,6 @@ class SupplierController {
             $address = $_POST['address'] ?? '';
             $email = $_POST['email'] ?? '';
 
-            // Simple validation
             if (empty($name) || empty($phone) || empty($address) || empty($email)) {
                 $error = "Veuillez remplir tous les champs obligatoires.";
             } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {

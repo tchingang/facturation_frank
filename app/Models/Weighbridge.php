@@ -1,6 +1,4 @@
 <?php
-// app/Models/Weighbridge.php (Updated)
-
 require_once __DIR__ . '/Database.php';
 
 class Weighbridge {

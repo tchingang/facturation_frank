@@ -1,19 +1,19 @@
 <?php
-// app/Controllers/PrestationController.php (Corrected)
+// app/Controllers/PrestationController.php
 
 require_once __DIR__ . '/../Models/Prestation.php';
 require_once __DIR__ . '/../Models/PrestationLigne.php';
-require_once __DIR__ . '/../Models/Client.php'; // Make sure Client model is included
+require_once __DIR__ . '/../Models/Client.php';
 
 class PrestationController {
     private $prestationModel;
     private $prestationLigneModel;
-    private $clientModel; // Initialize clientModel
+    private $clientModel;
 
     public function __construct() {
         $this->prestationModel = new Prestation();
         $this->prestationLigneModel = new PrestationLigne();
-        $this->clientModel = new Client(); // Initialize
+        $this->clientModel = new Client();
     }
 
     private function requireAuth() {
@@ -32,25 +32,22 @@ class PrestationController {
     public function create() {
         $this->requireAuth();
         $error = null;
-        $clients = $this->clientModel->getAllClients(); // Fetch clients for the form
+        $clients = $this->clientModel->getAllClients();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $attestation = $_POST['attestation_number'] ?? ''; // Assuming this field name from your form
+            $attestation = $_POST['attestation_number'] ?? '';
             $status = $_POST['status'] ?? 'Brouillon';
-            $date = $_POST['prestation_date'] ?? ''; // Assuming this field name from your form
-            $client_id = $_POST['client_id'] ?? null; // Get client_id from the form
+            $date = $_POST['prestation_date'] ?? '';
+            $client_id = $_POST['client_id'] ?? null;
 
-            // Basic validation
             if (empty($attestation) || empty($date) || empty($client_id)) {
                 $error = "Veuillez remplir tous les champs obligatoires (numéro d'attestation, date, client).";
             } else {
                 try {
-                    // Pass all 4 arguments to the create method
                     $prestation_id = $this->prestationModel->create($attestation, $status, $date, $client_id); // <--- FIX IS HERE
 
                     if ($prestation_id) {
-                        // Handle prestation lines if your form supports them
-                        // For example:
+
                         // $lines_data = $_POST['lines'] ?? [];
                         // foreach ($lines_data as $line) {
                         //     $this->prestationLigneModel->create($prestation_id, $line['description'], $line['quantity'], $line['unit_price']);
@@ -74,7 +71,7 @@ class PrestationController {
     public function edit($id) {
         $this->requireAuth();
         $prestation = $this->prestationModel->getPrestationById($id);
-        $clients = $this->clientModel->getAllClients(); // Fetch clients for the form
+        $clients = $this->clientModel->getAllClients();
         $error = null;
 
         if (!$prestation) {
@@ -87,15 +84,13 @@ class PrestationController {
             $attestation = $_POST['attestation_number'] ?? $prestation['attestation'];
             $status = $_POST['status'] ?? $prestation['status'];
             $date = $_POST['prestation_date'] ?? $prestation['date'];
-            $client_id = $_POST['client_id'] ?? $prestation['client_id']; // Get client_id from the form
+            $client_id = $_POST['client_id'] ?? $prestation['client_id'];
 
             if (empty($attestation) || empty($date) || empty($client_id)) {
                 $error = "Veuillez remplir tous les champs obligatoires (numéro d'attestation, date, client).";
             } else {
                 try {
-                    // Pass all 5 arguments to the update method
-                    if ($this->prestationModel->update($id, $attestation, $status, $date, $client_id)) { // <--- FIX IS HERE
-                        // Update associated lines if needed
+                    if ($this->prestationModel->update($id, $attestation, $status, $date, $client_id)) {
                         $_SESSION['success_message'] = "Prestation mise à jour avec succès !";
                         header('Location: ' . BASE_URL . '/prestations');
                         exit();

@@ -1,5 +1,5 @@
 <?php
-// app/Controllers/InvoiceController.php (Corrected for array keys and total_transport_cost)
+// app/Controllers/InvoiceController.php
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
@@ -56,24 +56,23 @@ class InvoiceController {
         $this->requireAuth();
 
         $error = '';
-        $clients = $this->clientModel->getAllClients(); // Assurez-vous que cette méthode existe
-        $prestations = $this->prestationModel->getAllUnbilledPrestations(); // Récupérer uniquement les prestations non facturées
-        $transports = $this->transportModel->getAllUnbilledTransports(); // Récupérer uniquement les transports non facturés
-        $weighbridges = $this->weighbridgeModel->getAllUnbilledWeighbridges(); // Récupérer uniquement les ponts bascule non facturés
+        $clients = $this->clientModel->getAllClients();
+        $prestations = $this->prestationModel->getAllUnbilledPrestations();
+        $transports = $this->transportModel->getAllUnbilledTransports();
+        $weighbridges = $this->weighbridgeModel->getAllUnbilledWeighbridges();
 
         // Générer le prochain numéro de facture
         $nextInvoiceNumber = $this->invoiceModel->getNextInvoiceNumber();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // ... (your existing POST logic for creating invoice) ...
-            $invoice_number = $_POST['invoice_number']; // This will now come from the generated value
+
+            $invoice_number = $_POST['invoice_number'];
             $invoice_date = $_POST['invoice_date'];
             $due_date = $_POST['due_date'];
             $client_id = $_POST['client_id'];
             $status = $_POST['status'];
-            $invoice_lines_data = json_decode($_POST['invoice_lines_json'] ?? '[]', true); // Assurez-vous que c'est la bonne façon de récupérer les lignes
+            $invoice_lines_data = json_decode($_POST['invoice_lines_json'] ?? '[]', true);
 
-            // Calculate total_amount before creating the invoice
             $total_amount = 0;
             foreach ($invoice_lines_data as $line) {
                 $total_amount += ($line['quantity'] * $line['unit_price']);
@@ -87,7 +86,7 @@ class InvoiceController {
                     $invoice_date,
                     $due_date,
                     $client_id,
-                    $total_amount, // Passez le total calculé
+                    $total_amount,
                     $status
                 );
 
@@ -102,7 +101,6 @@ class InvoiceController {
                             throw new Exception("Erreur lors de l'ajout d'une ligne de facture.");
                         }
 
-                        // Mettre à jour le statut "billed" pour les éléments source
                         if (isset($line['type']) && isset($line['source_id'])) {
                             switch ($line['type']) {
                                 case 'prestation':
@@ -126,9 +124,9 @@ class InvoiceController {
                     throw new Exception("Erreur lors de la création de la facture principale.");
                 }
             } catch (Exception $e) {
-                $this->invoiceModel->rollBack();
+                $this->invoiceModel->rollbackTransaction();
                 $error = "Erreur: " . $e->getMessage();
-                error_log("Invoice creation error: " . $e->getMessage()); // Log error for debugging
+                error_log("Invoice creation error: " . $e->getMessage()); 
             }
         }
 
@@ -174,26 +172,8 @@ class InvoiceController {
                     $newly_billed_transport_ids = [];
                     $newly_billed_weighbridge_ids = [];
 
-                    // Start Transaction
                     $this->invoiceModel->beginTransaction();
 
-                    // --- Determine items to unbill (those removed from the invoice) ---
-                    // This is a simplified approach. A more robust solution would involve:
-                    // 1. Storing source_id and type directly in invoice_lines table.
-                    // 2. Fetching current invoice lines' source_ids and types.
-                    // 3. Comparing with $invoice_lines_data_from_post to find removed items.
-                    // For now, we'll assume any item not in the POST data should be unbilled if it was previously billed by THIS invoice.
-                    // This means we need to fetch the original items linked to this invoice.
-                    // This requires having `source_id` and `type` columns in your `invoice_lines` table.
-                    // If you don't have them, this part will be more complex (parsing descriptions).
-
-                    // For now, let's just collect current items for potential unbilling if they are not re-selected.
-                    // This is a placeholder for a more complex logic.
-                    // $current_linked_prestations = []; // Fetch from DB based on invoice_lines.description
-                    // $current_linked_transports = [];
-                    // $current_linked_weighbridges = [];
-
-                    // Delete existing lines first (simplifies update logic, but loses original source_id links if not stored)
                     $this->invoiceLineModel->deleteByInvoiceId($id);
 
                     foreach ($invoice_lines_data_from_post as $line_data) {
@@ -201,13 +181,12 @@ class InvoiceController {
                         $description = trim($line_data['description'] ?? '');
                         $quantity = (float)($line_data['quantity'] ?? 0);
                         $unit_price = (float)($line_data['unit_price'] ?? 0);
-                        $source_id = $line_data['source_id'] ?? null; // For linked items
+                        $source_id = $line_data['source_id'] ?? null;
 
                         if (empty($description) || $quantity <= 0 || $unit_price < 0) {
                             throw new Exception("Détails de ligne de facture invalides pour une ligne de type '{$type}'.");
                         }
 
-                        // Collect data for saving to invoice_lines table
                         $all_invoice_lines_to_save[] = [
                             'description' => $description,
                             'quantity' => $quantity,
@@ -215,7 +194,6 @@ class InvoiceController {
                         ];
                         $total_amount += ($quantity * $unit_price);
 
-                        // Collect IDs for status update if it's a linked item
                         if ($type === 'prestation' && $source_id) {
                             $newly_billed_prestation_ids[] = $source_id;
                         } elseif ($type === 'transport' && $source_id) {
@@ -226,16 +204,11 @@ class InvoiceController {
                     }
 
                     if ($this->invoiceModel->update($id, $invoice_number, $invoice_date, $due_date, $client_id, $total_amount, $status)) {
-                        // Recreate invoice lines
+
                         foreach ($all_invoice_lines_to_save as $line_data) {
                             $this->invoiceLineModel->create($id, $line_data['description'], $line_data['quantity'], $line_data['unit_price']);
                         }
 
-                        // Update status of newly billed items to 'Billed'
-                        // For items that were previously billed by THIS invoice but are now *removed*,
-                        // their status should ideally revert to 'Unbilled'. This requires the more complex logic
-                        // mentioned above (tracking original source_ids in invoice_lines).
-                        // For this current setup, we're only marking newly selected items as 'Billed'.
                         foreach ($newly_billed_prestation_ids as $p_id) {
                             $this->prestationModel->updateBilledStatus($p_id, 'Billed');
                         }
@@ -257,7 +230,7 @@ class InvoiceController {
                     $this->invoiceModel->rollbackTransaction();
                     $error = "Erreur: " . $e->getMessage();
                     error_log("Invoice update error: " . $e->getMessage());
-                    // error_log($e->getTraceAsString());
+                    error_log($e->getTraceAsString());
                 }
             }
         }
@@ -266,20 +239,7 @@ class InvoiceController {
 
     public function delete($id) {
         $this->requireAuth();
-        // IMPORTANT: When deleting an invoice, you should revert the billed_status
-        // of all associated prestations, transports, and weighbridges back to 'Unbilled'.
-        // This requires:
-        // 1. Fetching all invoice lines for this invoice ID.
-        // 2. Identifying which original service (prestation, transport, weighbridge) each line refers to.
-        //    This is easiest if your `invoice_lines` table has columns like `source_type` and `source_id`.
-        // 3. Calling `updateBilledStatus($id, 'Unbilled')` on the respective models.
 
-        // Placeholder for the logic to revert billed_status on associated items
-        // $invoice_lines_to_revert = $this->invoiceLineModel->getLinesByInvoiceId($id);
-        // foreach ($invoice_lines_to_revert as $line) {
-        //     // Logic to parse description or use source_type/source_id from invoice_lines
-        //     // and call appropriate model's updateBilledStatus
-        // }
 
         try {
             $this->invoiceModel->beginTransaction();
@@ -314,33 +274,27 @@ class InvoiceController {
         }
 
         $invoice_lines = $this->invoiceLineModel->getLinesByInvoiceId($id);
-        $client = $this->clientModel->getClientById($invoice['client_id']); // Récupérer les détails complets du client
+        $client = $this->clientModel->getClientById($invoice['client_id']);
 
-        // 1. Instancier Dompdf
         $options = new Options();
-        $options->set('isHtml5ParserEnabled', true); // Active l'analyseur HTML5
-        $options->set('isRemoteEnabled', true);     // Permet de charger des images ou CSS externes (si besoin)
-        $options->set('defaultFont', 'Helvetica'); // Définir une police par défaut compatible
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'Helvetica');
 
         $dompdf = new Dompdf($options);
 
-        // 2. Charger le contenu HTML de la vue PDF
-        // Utiliser ob_start() pour capturer la sortie du fichier de vue
         ob_start();
         require __DIR__ . '/../Views/invoices/invoice_pdf_template.php';
         $html = ob_get_clean();
 
         $dompdf->loadHtml($html);
 
-        // (Optionnel) Définir la taille du papier et l'orientation
         $dompdf->setPaper('A4', 'portrait');
 
-        // 3. Rendre le HTML en PDF
         $dompdf->render();
 
-        // 4. Sortir le PDF vers le navigateur
         $invoice_number = htmlspecialchars($invoice['invoice_number']);
-        $dompdf->stream("Facture_N_{$invoice_number}.pdf", array("Attachment" => false)); // "Attachment" => false pour l'afficher dans le navigateur
+        $dompdf->stream("Facture_N_{$invoice_number}.pdf", array("Attachment" => false));
         exit();
     }
 }

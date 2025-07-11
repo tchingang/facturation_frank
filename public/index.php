@@ -17,8 +17,8 @@ require_once __DIR__ . '/../app/Models/TransportLigne.php';
 require_once __DIR__ . '/../app/Models/TransportDeclaration.php';
 require_once __DIR__ . '/../app/Models/Invoice.php';
 require_once __DIR__ . '/../app/Models/InvoiceLine.php';
-require_once __DIR__ . '/../app/Models/Weighbridge.php';      // Inclure le modèle Weighbridge
-require_once __DIR__ . '/../app/Models/WeighbridgeTax.php';  // Inclure le modèle WeighbridgeTax
+require_once __DIR__ . '/../app/Models/Weighbridge.php';
+require_once __DIR__ . '/../app/Models/WeighbridgeTax.php';
 
 require_once __DIR__ . '/../app/Controllers/UserController.php';
 require_once __DIR__ . '/../app/Controllers/DashboardController.php';
@@ -28,7 +28,7 @@ require_once __DIR__ . '/../app/Controllers/ClientController.php';
 require_once __DIR__ . '/../app/Controllers/PrestationController.php';
 require_once __DIR__ . '/../app/Controllers/TransportController.php';
 require_once __DIR__ . '/../app/Controllers/InvoiceController.php';
-require_once __DIR__ . '/../app/Controllers/WeighbridgeController.php'; // Inclure le contrôleur Weighbridge
+require_once __DIR__ . '/../app/Controllers/WeighbridgeController.php';
 
 $request_uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $request_uri = trim($request_uri, '/');

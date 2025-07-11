@@ -6,7 +6,6 @@ class DashboardController {
             header('Location: ' . BASE_URL . '/login');
             exit();
         }
-        // Logique pour afficher le tableau de bord
         $username = $_SESSION['username'] ?? 'Invité';
         $role = $_SESSION['role'] ?? '';
 

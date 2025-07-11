@@ -88,10 +88,6 @@ class Invoice {
 
     public function delete($id) {
         try {
-            // Note: The controller now manages the transaction for create/edit.
-            // For delete, you can either keep this internal transaction or move it to the controller
-            // to allow for multi-model transaction if deleting an invoice also affects other related data
-            // beyond just invoice_lines. For simplicity, keeping it here for now.
             $this->conn->beginTransaction();
 
             // Supprimer les lignes de facture associées
@@ -134,7 +130,7 @@ class Invoice {
         $nextSequence = 1;
         if ($lastInvoice) {
             // Extraire la partie numérique du dernier numéro
-            $lastNumber = (int) substr($lastInvoice['invoice_number'], -4); // Assuming NNNN is always 4 digits
+            $lastNumber = (int) substr($lastInvoice['invoice_number'], -4);
             $nextSequence = $lastNumber + 1;
         }
 

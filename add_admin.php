@@ -6,7 +6,7 @@ require_once __DIR__ . '/app/Models/User.php';
 $userModel = new User();
 
 $username = 'admin';
-$password = 'admin123'; // Votre mot de passe sécurisé
+$password = 'admin123';
 $role = 'admin';
 $email = 'admin@example.com';
 

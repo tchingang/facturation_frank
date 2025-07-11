@@ -3,7 +3,7 @@
 
 require_once __DIR__ . '/../Models/Weighbridge.php';
 require_once __DIR__ . '/../Models/WeighbridgeTax.php';
-require_once __DIR__ . '/../Models/Client.php'; // Pour la sélection du client
+require_once __DIR__ . '/../Models/Client.php';
 
 class WeighbridgeController {
     private $weighbridgeModel;
@@ -42,7 +42,7 @@ class WeighbridgeController {
             $driver_name = $_POST['driver_name'] ?? '';
             $first_weight = (float)($_POST['first_weight'] ?? 0);
             $second_weight = (float)($_POST['second_weight'] ?? 0);
-            $net_weight = $first_weight - $second_weight; // Calcul du poids net
+            $net_weight = $first_weight - $second_weight;
             $notes = $_POST['notes'] ?? '';
 
             $taxes = $_POST['taxes'] ?? [];

@@ -1,6 +1,4 @@
 <?php
-// app/Models/TransportDeclaration.php
-
 require_once __DIR__ . '/Database.php';
 
 class TransportDeclaration {

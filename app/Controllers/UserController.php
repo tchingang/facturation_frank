@@ -43,7 +43,7 @@ class UserController {
 
     private function requireAdmin() {
         if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-            header('Location: ' . BASE_URL . '/'); // Rediriger ou afficher une erreur
+            header('Location: ' . BASE_URL . '/');
             exit();
         }
     }
@@ -82,7 +82,7 @@ class UserController {
         $user = $this->userModel->getUserById($id);
 
         if (!$user) {
-            header('Location: ' . BASE_URL . '/users'); // Utilisateur non trouvé
+            header('Location: ' . BASE_URL . '/users');
             exit();
         }
 
@@ -90,7 +90,7 @@ class UserController {
             $username = $_POST['username'] ?? $user['username'];
             $role = $_POST['role'] ?? $user['role'];
             $email = $_POST['email'] ?? $user['email'];
-            $password = $_POST['password'] ?? null; // Mot de passe optionnel
+            $password = $_POST['password'] ?? null;
 
             if (empty($username) || empty($email)) {
                 $error = "Nom d'utilisateur et email sont obligatoires.";
